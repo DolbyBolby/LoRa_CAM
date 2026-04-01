@@ -145,7 +145,7 @@ void loop() {
 
     if (transmissionState == RADIOLIB_ERR_NONE) {
       // packet was successfully sent
-      Serial.println(F("transmission finished!"));
+      Serial.print(F("transmission finished!"));
 
     } else {
       Serial.print(F("failed, code "));
