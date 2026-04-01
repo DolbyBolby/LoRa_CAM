@@ -5,7 +5,7 @@ app = typer.Typer()
 
 
 @app.command()
-def send(message: str, port: str = "COM1", baudrate: int = 19200) -> None:
+def send(message: str, port: str = "COM5", baudrate: int = 9600) -> None:
     """Send a message via serial port."""
     send_string(message, port, baudrate)
 
