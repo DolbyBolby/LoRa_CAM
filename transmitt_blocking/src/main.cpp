@@ -15,6 +15,14 @@ int transmissionState = RADIOLIB_ERR_NONE;
 volatile bool transmittedFlag = false;
 volatile bool receivedFlag = false;
 
+enum States {
+  WAIT_CMD,
+  TX_MOD,
+  WAIT_ACK
+};
+
+States states = WAIT_CMD;
+
 #if defined(ESP32)
   ICACHE_RAM_ATTR
 #endif
