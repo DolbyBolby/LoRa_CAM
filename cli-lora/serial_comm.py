@@ -14,11 +14,11 @@ def send_string(message: str, port: str = "COM5", baudrate: int = 9600) -> None:
         print(f"✗ Error: {e}")
 
 def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600, 
-                     timeout_ms: int = 1000) -> None:
+                     timeout: float = 1 ) -> None:
     try:
         message_str = str(message)
         with serial.Serial(port=port, baudrate=baudrate, 
-                          timeout=timeout_ms/1000, 
+                          timeout=timeout, 
                           bytesize=8,           
                           stopbits=1,
                           parity='N',
@@ -40,23 +40,28 @@ def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600,
             
             response = ""
             start_time = time.time()
-            last_data_time = time.time()
-            ack = False
+            # last_data_time = time.time()
+            # ack = False
+
+        
+            # if ser.in_waiting > 0:
+            #     data = ser.read(ser.in_waiting)
+            #     response += data.decode('utf-8', errors='ignore')
             
-            while (time.time() - start_time) < (timeout_ms / 1000):
+            while (time.time() - start_time) < (timeout):
                 if ser.in_waiting > 0:
                     data = ser.read(ser.in_waiting)
                     #print(f"[DEBUG] Données brutes: {data}")
                     response += data.decode('utf-8', errors='ignore')
-                    last_data_time = time.time()
-                    if response and (time.time() - last_data_time) > 0.2:
-                        print(f"Confirmation reçue: {response.strip()}")
-                        ack = True
-                        break
+                    # last_data_time = time.time()
+                    # if response and (time.time() - last_data_time) > 0.2:
+                    #     print(f"Confirmation reçue: {response.strip()}")
+                    #     ack = True
+                    #     break
         
             #if "[ACK]" in response and message in response:
             #    print(f"Réponse reçue: {response.strip()}")
-            if response is not None: 
+            if response: 
                 print(f"Réponse reçue: {response.strip()}")
             else:
                 print(f"Pas de réponse")
