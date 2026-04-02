@@ -98,11 +98,11 @@ void setup() {
   radio.setPacketSentAction(setFlag);
 
   // start transmitting the first packet
-  Serial.print(F("[SX1280] Sending first packet ... "));
+  //Serial.print(F("[SX1280] Sending first packet ... "));
 
   // you can transmit C-string or Arduino string up to
   // 256 characters long
-  transmissionState = radio.startTransmit("Hello World!");
+  //transmissionState = radio.startTransmit("Hello World!");
 
   // Some modules have an external RF switch
   // controlled via two pins (RX enable, TX enable)s
