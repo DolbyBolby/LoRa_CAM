@@ -36,7 +36,7 @@ def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600,
             ser.flush()
             print(f"Message sent: {message_str} ({bytes_sent} bytes)")
             
-            time.sleep(0.1)
+            time.sleep(1)
             
             response = ""
             start_time = time.time()

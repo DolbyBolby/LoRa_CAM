@@ -25,7 +25,7 @@ void setTransmitFlag(void) {
 #if defined(ESP32)
   ICACHE_RAM_ATTR
 #endif
-void setReceivedFlaf(void) {
+void setReceivedFlag(void) {
   receivedFlag = true;
 }
 
@@ -55,8 +55,8 @@ void setup() {
     while (true) { delay(10); }
   }
 
-  radio.setPacketSentAction(setFlag);
-
+  radio.setPacketSentAction(setTransmitFlag);
+  radio.setPacketReceivedAction(setReceivedFlag);
 }
 
 void loop() {
@@ -66,11 +66,11 @@ void loop() {
     if (c == '\n') {
       // String complète reçue
       if (serialBuffer.length() > 0) {
-        //Serial.print(F("[Serial] Received: "));
-        //Serial.println(serialBuffer);
+        // Serial.print(F("[Serial] Received: "));
+        // Serial.println(serialBuffer);
         
         // Utiliser la string reçue pour la transmission radio
-        //Serial.print(F("[SX1280] Sending via radio: "));
+        Serial.print(F("[SX1280] Sending via radio: "));
         Serial.println(serialBuffer);
         transmissionState = radio.startTransmit(serialBuffer);
         
@@ -95,9 +95,34 @@ void loop() {
       Serial.println(transmissionState);
     }
     radio.finishTransmit();
-    delay(100);
-    radio.startReceive();
+    //delay(100);
+    int rxState = radio.startReceive();
+    if(rxState != RADIOLIB_ERR_NONE) {
+      Serial.print("startReceive failed, code ");
+      Serial.println(rxState);
+      //exchangeInProgress = false;
+    }
+  }
+
+  if(receivedFlag) {
+    receivedFlag = false;
+    String ack;
+    int receptionState = radio.readData(ack);
+    if(receptionState == RADIOLIB_ERR_NONE) {
+      if(ack == "ACK") {
+        Serial.println("ACK received");
+      } else {
+        Serial.print("Unexpected response: ");
+        Serial.println(ack);
+      }
+      // Serial.print(F("from receiver to transmitter : "));
+      // Serial.println(ack);
+    }else{
+      Serial.print(F("error reception : "));
+      Serial.println(receptionState);
+    }
+    radio.finishReceive();
+    //delay(100);
+    //radio.startReceive();
   }
 }
-
-if 
