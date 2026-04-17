@@ -86,13 +86,13 @@ void loop() {
       radio.finishReceive();
       //delay(100);
       transmissionState = radio.startTransmit("ACK");
-      if(transmissionState == RADIOLIB_ERR_NONE) {
+      if(transmittedFlag) {
         radio.finishTransmit();
         Serial.print(F("finish transmit"));
         //delay(100);
         radio.startReceive();
       }else {
-        Serial.print(F("transmission from receive error :"));
+        Serial.print(F("transmission ... :"));
         Serial.println(transmissionState);
       }
 

@@ -78,10 +78,9 @@ void loop() {
         // Serial.println(serialBuffer);
         
         // Utiliser la string reçue pour la transmission radio
-        Serial.print(F("[SX1280] Sending via radio: "));
-        Serial.println(serialBuffer);
+        //Serial.print(F("[SX1280] Sending via radio: "));
+        //Serial.println(serialBuffer);
         transmissionState = radio.startTransmit(serialBuffer);
-        
         // Vider le buffer
         serialBuffer = "";
       }
@@ -103,8 +102,7 @@ void loop() {
       Serial.println(transmissionState);
     }
     radio.finishTransmit();
-    //delay(100);
-    int rxState = radio.startReceive();
+    int rxState = radio.startReceive();                               
     if(rxState != RADIOLIB_ERR_NONE) {
       Serial.print("startReceive failed, code ");
       Serial.println(rxState);
@@ -120,7 +118,7 @@ void loop() {
       if(ack == "ACK") {
         Serial.println("ACK received");
       } else {
-        Serial.print("Unexpected response: ");
+        //Serial.print("Unexpected response: ");
         Serial.println(ack);
       }
       // Serial.print(F("from receiver to transmitter : "));
