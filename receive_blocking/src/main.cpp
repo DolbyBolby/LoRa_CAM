@@ -68,6 +68,17 @@ void setup() {
 
 void loop() {
   // check if the flag is set
+  uint32_t irqFlags = radio.getIrqFlags();
+  Serial.print("IRQ Flags: 0x");
+  Serial.println(irqFlags, HEX);
+
+  if (irqFlags & (1UL << RADIOLIB_IRQ_TX_DONE)) {
+    Serial.println("TX_DONE flag detected!");
+  }
+  if (irqFlags & (1UL << RADIOLIB_IRQ_RX_DONE)) {
+    Serial.println("RX_DONE flag detected!");
+  }
+
   if(receivedFlag) {
     // reset flag
     receivedFlag = false;
@@ -85,15 +96,21 @@ void loop() {
 
       radio.finishReceive();
       //delay(100);
-      transmissionState = radio.startTransmit("ACK");
+      size_t i = 0;
+      for(size_t i = 0; i < 100; i++){
+        String msg = String(i);
+        transmissionState = radio.startTransmit(msg);
+      }
       if(transmittedFlag) {
         radio.finishTransmit();
         Serial.print(F("finish transmit"));
         //delay(100);
         radio.startReceive();
       }else {
+        radio.finishTransmit();
         Serial.print(F("transmission ... :"));
         Serial.println(transmissionState);
+        radio.startReceive();
       }
 
 

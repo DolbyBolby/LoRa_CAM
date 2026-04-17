@@ -90,6 +90,17 @@ void loop() {
     }
   }
 
+  // uint32_t irqFlags = radio.getIrqFlags();
+  // Serial.print("IRQ Flags: 0x");
+  // Serial.println(irqFlags, HEX);
+
+  // if (irqFlags & (1UL << RADIOLIB_IRQ_TX_DONE)) {
+  //   Serial.println("TX_DONE flag detected!");
+  // }
+  // if (irqFlags & (1UL << RADIOLIB_IRQ_RX_DONE)) {
+  //   Serial.println("RX_DONE flag detected!");
+  // }
+
   // check if the previous transmission finished
   if(transmittedFlag) {
     // reset flag
