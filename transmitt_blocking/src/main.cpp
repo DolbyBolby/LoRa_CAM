@@ -115,36 +115,43 @@ void loop() {
     radio.finishTransmit();
     radio.clearPacketSentAction();
     radio.setPacketReceivedAction(setReceivedFlag);
-    int rxState = radio.startReceive(); 
-    Serial.print(F("startReceive"));                              
-    if(rxState != RADIOLIB_ERR_NONE) {
-      Serial.print("startReceive failed, code ");
-      Serial.println(rxState);
-      //exchangeInProgress = false;
+    // int rxState = radio.startReceive();                           
+    // if(rxState != RADIOLIB_ERR_NONE) {
+    //   Serial.print("startReceive failed, code ");
+    //   Serial.println(rxState);
+    //   //exchangeInProgress = false;
+    String str;
+    int state = radio.receive(str,0,2000);
+    if (state == RADIOLIB_ERR_NONE) {
+      Serial.print(F("[SX1280] Data:\t\t"));
+      Serial.println(str);
+    }else{
+      Serial.println("received fail : ");
+      Serial.print(state);
     }
   }
 
-  if(receivedFlag) {
-    receivedFlag = false;
-    String ack;
-    int receptionState = radio.readData(ack);
-    if(receptionState == RADIOLIB_ERR_NONE) {
-      if(ack == "ACK") {
-        Serial.println("ACK received");
-      } else {
-        Serial.print("Unexpected response: ");
-        Serial.println(ack);
-      }
-      // Serial.print(F("from receiver to transmitter : "));
-      // Serial.println(ack);
-    }else{
-      Serial.print(F("error reception : "));
-      Serial.println(receptionState);
-    }
-    radio.finishReceive();
-    radio.clearPacketReceivedAction();
-    radio.setPacketSentAction(setTransmitFlag);
-    //delay(100);
-    //radio.startReceive();
-  }
+  // if(receivedFlag) {
+  //   receivedFlag = false;
+  //   String ack;
+  //   int receptionState = radio.readData(ack);
+  //   if(receptionState == RADIOLIB_ERR_NONE) {
+  //     if(ack == "ACK") {
+  //       Serial.println("ACK received");
+  //     } else {
+  //       Serial.print("Unexpected response: ");
+  //       Serial.println(ack);
+  //     }
+  //     // Serial.print(F("from receiver to transmitter : "));
+  //     // Serial.println(ack);
+  //   }else{
+  //     Serial.print(F("error reception : "));
+  //     Serial.println(receptionState);
+  //   }
+  //   radio.finishReceive();
+  //   radio.clearPacketReceivedAction();
+  //   radio.setPacketSentAction(setTransmitFlag);
+  //   //delay(100);
+  //   //radio.startReceive();
+  // }
 }

@@ -94,9 +94,19 @@ void loop() {
 
       radio.finishReceive();
       radio.clearPacketReceivedAction();
-      radio.setPacketSentAction(setTransmitFlag);
+      // radio.setPacketSentAction(setTransmitFlag);
       transmissionState = radio.startTransmit("ACK");
-
+      for (int i = 0; i < 100; i++) {
+        String msg  = "hello " + String(i);
+        int state = radio.transmit(msg);
+        if(state == RADIOLIB_ERR_NONE) {
+          Serial.println(msg);
+        }else {
+          Serial.print("transmitt blocking failed");
+          Serial.println(state);
+        } 
+      }
+      //delay(100);
     } else if (receptionState == RADIOLIB_ERR_CRC_MISMATCH) {
       // packet was received, but is malformed
       Serial.println(F("CRC error!"));
@@ -109,14 +119,24 @@ void loop() {
     }
   }
 
-  if(transmittedFlag) {
-      radio.finishTransmit();
-      transmittedFlag = false;
-      radio.clearPacketSentAction();
-      radio.setPacketReceivedAction(setReceivedFlag);
-      Serial.println(F("finish transmit"));
-      //delay(100);
-      radio.startReceive();
-  }
+  // if(transmittedFlag) {
+  //     radio.finishTransmit();
+  //     // transmittedFlag = false;
+  //     // radio.clearPacketSentAction();
+  //     // radio.setPacketReceivedAction(setReceivedFlag);
+  //     // Serial.println(F("finish transmit"));
+  //     // //delay(100);
+  //     // radio.startReceive();
+  //     for (int i = 0; i < 100; i++) {
+  //       String msg  = "hello " + String(i);
+  //       int state = radio.transmit(msg);
+  //       if(state == RADIOLIB_ERR_NONE) {
+  //         Serial.println(msg);
+  //       }else {
+  //         Serial.print("transmitt blocking failed");
+  //         Serial.println(state);
+  //       } 
+  //     }
+  // }
 
 }
