@@ -51,7 +51,7 @@ void setup() {
     Serial.println(state);
     while (true) { delay(10); }
   }
-  radio.setPacketSentAction(setTransmitFlag);
+  
   radio.setPacketReceivedAction(setReceivedFlag);
 
   // start listening for LoRa packets
@@ -60,14 +60,14 @@ void setup() {
   if (state == RADIOLIB_ERR_NONE) {
     Serial.println(F("success!"));
   } else {
-    Serial.print(F("failed, code "));
+    Serial.print(F("failed, code ")); 
     Serial.println(state);
     while (true) { delay(10); }
   }
 }
 
 void loop() {
-  // check if the flag is set
+  
   uint32_t irqFlags = radio.getIrqFlags();
   Serial.print("IRQ Flags: 0x");
   Serial.println(irqFlags, HEX);
@@ -87,32 +87,15 @@ void loop() {
     int receptionState = radio.readData(buffer);
 
     if (receptionState == RADIOLIB_ERR_NONE) {
-      // packet was successfully received
-      Serial.print(F("[SX1280] Received packet!"));
 
       // print data of the packet
       Serial.print(F("[SX1280] Data:\t\t"));
       Serial.println(buffer);
 
       radio.finishReceive();
-      //delay(100);
-      size_t i = 0;
-      for(size_t i = 0; i < 100; i++){
-        String msg = String(i);
-        transmissionState = radio.startTransmit(msg);
-      }
-      if(transmittedFlag) {
-        radio.finishTransmit();
-        Serial.print(F("finish transmit"));
-        //delay(100);
-        radio.startReceive();
-      }else {
-        radio.finishTransmit();
-        Serial.print(F("transmission ... :"));
-        Serial.println(transmissionState);
-        radio.startReceive();
-      }
-
+      radio.clearPacketReceivedAction();
+      radio.setPacketSentAction(setTransmitFlag);
+      transmissionState = radio.startTransmit("ACK");
 
     } else if (receptionState == RADIOLIB_ERR_CRC_MISMATCH) {
       // packet was received, but is malformed
@@ -125,4 +108,15 @@ void loop() {
 
     }
   }
+
+  if(transmittedFlag) {
+      radio.finishTransmit();
+      transmittedFlag = false;
+      radio.clearPacketSentAction();
+      radio.setPacketReceivedAction(setReceivedFlag);
+      Serial.println(F("finish transmit"));
+      //delay(100);
+      radio.startReceive();
+  }
+
 }

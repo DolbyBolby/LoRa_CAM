@@ -14,7 +14,7 @@ def send_string(message: str, port: str = "COM5", baudrate: int = 9600) -> None:
         print(f"✗ Error: {e}")
 
 def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600, 
-                     timeout: float = 1 ) -> None:
+                     timeout: float = 5 ) -> None:
     
     in_if = 0
     out_if = 0
@@ -73,11 +73,9 @@ def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600,
             #if "[ACK]" in response and message in response:
             #    print(f"Réponse reçue: {response.strip()}")
             if response: 
-                print(f"Réponse reçue: {response.strip()}   in_if : {in_if} out_if : {out_if}")
-                in_if = out_if = 0
+                print(f"Réponse reçue: {response.strip()}")
             else:
                 print(f"Pas de réponse")
-                in_if = out_if = 0
 
     except serial.SerialException as e:
         print(f"Serial error: {e}")
