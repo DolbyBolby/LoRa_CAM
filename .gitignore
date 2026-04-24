@@ -83,3 +83,4 @@ Thumbs.db
 ESP32_DevKitC_V4_test/
 *.log
 *.tmp
+__pycache__/
