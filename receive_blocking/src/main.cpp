@@ -70,8 +70,11 @@ void loop() {
           Serial.print(F("Data:\t\t"));
           Serial.println(buffer);
         }
-        currentState = TX_NODE;
-        delay(100);
+        if(buffer != "[INIT]") {
+          currentState = TX_NODE;
+          delay(100);
+        }
+        
       }
       break;
     }

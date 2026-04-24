@@ -50,6 +50,7 @@ void setup() {
   }
 
   radio.setDio1Action(setFlag);
+  //radio.startTransmit("[INIT]");
 }
 
 void loop() {
