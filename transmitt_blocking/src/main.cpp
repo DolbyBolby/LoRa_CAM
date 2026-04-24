@@ -21,7 +21,7 @@ String serialBuffer = "";
 //bool transmitFlag = false;
 volatile bool operationDone = false;
 unsigned long startTime = millis();
-unsigned long timeout = 2000;
+unsigned long timeout = 200;
 
 #if defined(ESP8266) || defined(ESP32)
   ICACHE_RAM_ATTR
@@ -49,8 +49,6 @@ void setup() {
     Serial.println(crc_state);
   }
 
-  // set the function that will be called
-  // when new packet is received
   radio.setDio1Action(setFlag);
 }
 
@@ -66,10 +64,8 @@ void loop() {
     case TX_NODE: {
       if(Serial.available()) logRejectedCommand();
       int radio_state = radio.startTransmit(serialBuffer);
-      if (radio_state == RADIOLIB_ERR_NONE) {
-        Serial.println(F("TX"));
-      } else {
-        Serial.print(F("failed, code "));
+      if (radio_state != RADIOLIB_ERR_NONE) {
+        Serial.print(F("failed transmit, "));
         Serial.println(radio_state);
         while (true) { delay(10); }
       }
@@ -82,10 +78,8 @@ void loop() {
       if(operationDone) {
         operationDone = false; //reset flag
         int radio_state = radio.startReceive();
-        if (radio_state == RADIOLIB_ERR_NONE) {
-          Serial.println(F("RX"));
-        } else {
-          Serial.print(F("failed, code "));
+        if (radio_state != RADIOLIB_ERR_NONE) {
+          Serial.print(F("failed receive,"));
           Serial.println(radio_state);
           while (true) { delay(10); }
         }
@@ -110,7 +104,7 @@ void loop() {
         }
       }
       if(millis() - startTime >= timeout) {
-        Serial.print(F("TIMEOUT"));
+        Serial.print(F("TIMEOUT, no message receive, try another ..."));
         currentState = TX_NODE;
       }
       break;
