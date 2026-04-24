@@ -1,60 +1,65 @@
-#include <Arduino.h>
+/*
+  RadioLib SX126x Ping-Pong Example
+
+  This example is intended to run on two SX126x radios,
+  and send packets between the two.
+
+  For default module settings, see the wiki page
+  https://github.com/jgromes/RadioLib/wiki/Default-configuration#sx126x---lora-modem
+
+  For full API reference, see the GitHub Pages
+  https://jgromes.github.io/RadioLib/
+*/
+
+// include the library
 #include <RadioLib.h>
 
+// uncomment the following only on one
+// of the nodes to initiate the pings
+#define INITIATING_NODE
 
-SPIClass spi(VSPI);
-SPISettings spiSettings(8000000, MSBFIRST, SPI_MODE0);
-SX1280 radio = new Module(25, 14, 2, 13, spi, spiSettings);
-//SX1281 radio = new Module(25, 27, 2, 13);
+// SX1262 has the following connections:
+// NSS pin:   10
+// DIO1 pin:  2
+// NRST pin:  3
+// BUSY pin:  9
+SX1280 radio = new Module(25, 14, 2, 13);
 
+// or detect the pinout automatically using RadioBoards
+// https://github.com/radiolib-org/RadioBoards
+/*
+#define RADIO_BOARD_AUTO
+#include <RadioBoards.h>
+Radio radio = new RadioModule();
+*/
 
-// save transmission state between loops
+// save transmission states between loops
 int transmissionState = RADIOLIB_ERR_NONE;
 
-// flag to indicate that a packet was sent
-volatile bool transmittedFlag = false;
-volatile bool receivedFlag = false;
+// flag to indicate transmission or reception state
+bool transmitFlag = false;
 
-enum States {
-  WAIT_CMD,
-  TX_MOD,
-  WAIT_ACK
-};
+// flag to indicate that a packet was sent or received
+volatile bool operationDone = false;
 
-States states = WAIT_CMD;
-
-#if defined(ESP32)
+// this function is called when a complete packet
+// is transmitted or received by the module
+// IMPORTANT: this function MUST be 'void' type
+//            and MUST NOT have any arguments!
+#if defined(ESP8266) || defined(ESP32)
   ICACHE_RAM_ATTR
 #endif
-void setTransmitFlag(void) {
-  transmittedFlag = true;
+void setFlag(void) {
+  // we sent or received a packet, set the flag
+  operationDone = true;
 }
-
-#if defined(ESP32)
-  ICACHE_RAM_ATTR
-#endif
-void setReceivedFlag(void) {
-  receivedFlag = true;
-}
-
-// String buffer for serial data
-String serialBuffer = "";
-
-float freq = 2450.0;
-float bw = 203.125;
-uint8_t sf = 12;
-uint8_t cr = 7;
-uint8_t syncW = RADIOLIB_SX128X_SYNC_WORD_PRIVATE;
-int8_t pwr = 10;
-uint16_t pl = 12;  
 
 void setup() {
   Serial.begin(9600);
 
-  // Initialize SX1280 with default settings
-  Serial.print(F("[SX1280] Initializing ... "));
-  spi.begin(18,19,23,25);
-  int state = radio.begin(freq,bw,sf,cr,syncW,pwr,pl);
+  // initialize SX1262 with default settings
+  Serial.print(F("[SX1262] Initializing ... "));
+  int state = radio.begin();
   if (state == RADIOLIB_ERR_NONE) {
     Serial.println(F("success!"));
   } else {
@@ -63,95 +68,86 @@ void setup() {
     while (true) { delay(10); }
   }
 
-  radio.setPacketSentAction(setTransmitFlag);
+  // set the function that will be called
+  // when new packet is received
+  radio.setDio1Action(setFlag);
+
+  #if defined(INITIATING_NODE)
+    // send the first packet on this node
+    Serial.print(F("[SX1262] Sending first packet ... "));
+    transmissionState = radio.startTransmit("Hello World!");
+    transmitFlag = true;
+  #else
+    // start listening for LoRa packets on this node
+    Serial.print(F("[SX1262] Starting to listen ... "));
+    state = radio.startReceive();
+    if (state == RADIOLIB_ERR_NONE) {
+      Serial.println(F("success!"));
+    } else {
+      Serial.print(F("failed, code "));
+      Serial.println(state);
+      while (true) { delay(10); }
+    }
+  #endif
 }
 
 void loop() {
-  // Lecture des données du port série
-  while (Serial.available()) {
-    char c = Serial.read();
-    if (c == '\n') {
-      // String complète reçue
-      if (serialBuffer.length() > 0) {
-        // Serial.print(F("[Serial] Received: "));
-        // Serial.println(serialBuffer);
-        
-        // Utiliser la string reçue pour la transmission radio
-        //Serial.print(F("[SX1280] Sending via radio: "));
-        //Serial.println(serialBuffer);
-
-        transmissionState = radio.startTransmit(serialBuffer);
-        // Vider le buffer
-        serialBuffer = "";
-      }
-    } else if (c != '\r') {
-      // Ajouter le caractère au buffer
-      serialBuffer += c;
-    }
-  }
-
-  // uint32_t irqFlags = radio.getIrqFlags();
-  // Serial.print("IRQ Flags: 0x");
-  // Serial.println(irqFlags, HEX);
-
-  // if (irqFlags & (1UL << RADIOLIB_IRQ_TX_DONE)) {
-  //   Serial.println("TX_DONE flag detected!");
-  // }
-  // if (irqFlags & (1UL << RADIOLIB_IRQ_RX_DONE)) {
-  //   Serial.println("RX_DONE flag detected!");
-  // }
-
-  // check if the previous transmission finished
-  if(transmittedFlag) {
+  // check if the previous operation finished
+  if(operationDone) {
     // reset flag
-    transmittedFlag = false;
-    if (transmissionState == RADIOLIB_ERR_NONE) {
-      // packet was successfully sent
-      Serial.print(F("transmission finished!"));
-    } else {
-      Serial.print(F("failed, code "));
-      Serial.println(transmissionState);
-    }
-    radio.finishTransmit();
-    radio.clearPacketSentAction();
-    radio.setPacketReceivedAction(setReceivedFlag);
-    // int rxState = radio.startReceive();                           
-    // if(rxState != RADIOLIB_ERR_NONE) {
-    //   Serial.print("startReceive failed, code ");
-    //   Serial.println(rxState);
-    //   //exchangeInProgress = false;
-    String str;
-    int state = radio.receive(str,0,2000);
-    if (state == RADIOLIB_ERR_NONE) {
-      Serial.print(F("[SX1280] Data:\t\t"));
-      Serial.println(str);
-    }else{
-      Serial.println("received fail : ");
-      Serial.print(state);
-    }
-  }
+    operationDone = false;
 
-  // if(receivedFlag) {
-  //   receivedFlag = false;
-  //   String ack;
-  //   int receptionState = radio.readData(ack);
-  //   if(receptionState == RADIOLIB_ERR_NONE) {
-  //     if(ack == "ACK") {
-  //       Serial.println("ACK received");
-  //     } else {
-  //       Serial.print("Unexpected response: ");
-  //       Serial.println(ack);
-  //     }
-  //     // Serial.print(F("from receiver to transmitter : "));
-  //     // Serial.println(ack);
-  //   }else{
-  //     Serial.print(F("error reception : "));
-  //     Serial.println(receptionState);
-  //   }
-  //   radio.finishReceive();
-  //   radio.clearPacketReceivedAction();
-  //   radio.setPacketSentAction(setTransmitFlag);
-  //   //delay(100);
-  //   //radio.startReceive();
-  // }
+    if(transmitFlag) {
+      // the previous operation was transmission, listen for response
+      // print the result
+      if (transmissionState == RADIOLIB_ERR_NONE) {
+        // packet was successfully sent
+        Serial.println(F("transmission finished!"));
+
+      } else {
+        Serial.print(F("failed, code "));
+        Serial.println(transmissionState);
+
+      }
+
+      // listen for response
+      radio.startReceive();
+      transmitFlag = false;
+
+    } else {
+      // the previous operation was reception
+      // print data and send another packet
+      String str;
+      int state = radio.readData(str);
+
+      if (state == RADIOLIB_ERR_NONE) {
+        // packet was successfully received
+        Serial.println(F("[SX1262] Received packet!"));
+
+        // print data of the packet
+        Serial.print(F("[SX1262] Data:\t\t"));
+        Serial.println(str);
+
+        // print RSSI (Received Signal Strength Indicator)
+        Serial.print(F("[SX1262] RSSI:\t\t"));
+        Serial.print(radio.getRSSI());
+        Serial.println(F(" dBm"));
+
+        // print SNR (Signal-to-Noise Ratio)
+        Serial.print(F("[SX1262] SNR:\t\t"));
+        Serial.print(radio.getSNR());
+        Serial.println(F(" dB"));
+
+      }
+
+      // wait a second before transmitting again
+      delay(1000);
+
+      // send another one
+      Serial.print(F("[SX1262] Sending another packet ... "));
+      transmissionState = radio.startTransmit("Hello World!");
+      transmitFlag = true;
+    }
+  
+  }
 }
