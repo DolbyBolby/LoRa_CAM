@@ -16,9 +16,6 @@ def send_string(message: str, port: str = "COM5", baudrate: int = 9600) -> None:
 def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600, 
                      timeout: float = 5 ) -> None:
     
-    in_if = 0
-    out_if = 0
-
     try:
         message_str = str(message)
         with serial.Serial(port=port, baudrate=baudrate, 
@@ -40,31 +37,10 @@ def send_and_receive(message: str, port: str = "COM5", baudrate: int = 9600,
             ser.flush()
             print(f"Message sent: {message_str} ({bytes_sent} bytes)")
             
-            time.sleep(1)
+            time.sleep(5)
             
             response = ""
             start_time = time.time()
-            # last_data_time = time.time()
-            # ack = False
-
-        
-            # if ser.in_waiting > 0:
-            #     data = ser.read(ser.in_waiting)
-            #     response += data.decode('utf-8', errors='ignore')
-            
-            # while (time.time() - start_time) < (timeout):
-            #     if ser.in_waiting > 0:
-            #         data = ser.read(ser.in_waiting)
-            #         #print(f"[DEBUG] Données brutes: {data}")
-            #         response += data.decode('utf-8', errors='ignore')
-            #         # last_data_time = time.time()
-            #         # if response and (time.time() - last_data_time) > 0.2:
-            #         #     print(f"Confirmation reçue: {response.strip()}")
-            #         #     ack = True
-            #         #     break
-            #         in_if += 1
-            #     out_if += 1
-            
             if ser.in_waiting > 0:
                     data = ser.read(ser.in_waiting)
                     #print(f"[DEBUG] Données brutes: {data}")

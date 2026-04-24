@@ -1,14 +1,37 @@
+/*
+  RadioLib SX126x Ping-Pong Example
 
+  This example is intended to run on two SX126x radios,
+  and send packets between the two.
+
+  For default module settings, see the wiki page
+  https://github.com/jgromes/RadioLib/wiki/Default-configuration#sx126x---lora-modem
+
+  For full API reference, see the GitHub Pages
+  https://jgromes.github.io/RadioLib/
+*/
+
+// include the library
 #include <RadioLib.h>
 
 // uncomment the following only on one
 // of the nodes to initiate the pings
-#define INITIATING_NODE
+//#define INITIATING_NODE
 
-SPIClass spi(VSPI);
-SPISettings spiSettings(8000000, MSBFIRST, SPI_MODE0);
-SX1280 radio = new Module(25, 14, 2, 13, spi, spiSettings);
+// SX1262 has the following connections:
+// NSS pin:   10
+// DIO1 pin:  2
+// NRST pin:  3
+// BUSY pin:  9
+SX1280 radio = new Module(25, 27, 2, 13);
 
+// or detect the pinout automatically using RadioBoards
+// https://github.com/radiolib-org/RadioBoards
+/*
+#define RADIO_BOARD_AUTO
+#include <RadioBoards.h>
+Radio radio = new RadioModule();
+*/
 
 // save transmission states between loops
 int transmissionState = RADIOLIB_ERR_NONE;
@@ -19,6 +42,10 @@ bool transmitFlag = false;
 // flag to indicate that a packet was sent or received
 volatile bool operationDone = false;
 
+// this function is called when a complete packet
+// is transmitted or received by the module
+// IMPORTANT: this function MUST be 'void' type
+//            and MUST NOT have any arguments!
 #if defined(ESP8266) || defined(ESP32)
   ICACHE_RAM_ATTR
 #endif
@@ -32,7 +59,6 @@ void setup() {
 
   // initialize SX1262 with default settings
   Serial.print(F("[SX1262] Initializing ... "));
-  spi.begin(18,19,23,25);
   int state = radio.begin();
   if (state == RADIOLIB_ERR_NONE) {
     Serial.println(F("success!"));
@@ -42,6 +68,8 @@ void setup() {
     while (true) { delay(10); }
   }
 
+  // set the function that will be called
+  // when new packet is received
   radio.setDio1Action(setFlag);
 
   #if defined(INITIATING_NODE)
@@ -64,28 +92,6 @@ void setup() {
 }
 
 void loop() {
-
-  while (Serial.available()) {
-    char c = Serial.read();
-    if (c == '\n') {
-      // String complète reçue
-      if (serialBuffer.length() > 0) {
-        Serial.print(F("[Serial] Received: "));
-        Serial.println(serialBuffer);
-        
-        // Utiliser la string reçue pour la transmission radio
-        Serial.print(F("[SX1280] Sending via radio: "));
-        transmissionState = radio.startTransmit(serialBuffer);
-        
-        // Vider le buffer
-        serialBuffer = "";
-      }
-    } else if (c != '\r') {
-      // Ajouter le caractère au buffer
-      serialBuffer += c;
-    }
-  }
-  
   // check if the previous operation finished
   if(operationDone) {
     // reset flag
