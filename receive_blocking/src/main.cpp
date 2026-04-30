@@ -70,10 +70,10 @@ void loop() {
         int numBytes = radio.getPacketLength();
         int radio_state = radio.readData(dataArr, numBytes);
         if (radio_state == RADIOLIB_ERR_NONE) {
-          Serial.println(F("Cmd:\t"));
+          Serial.print(F("Cmd:\t"));
           Serial.print(dataArr[0]);
           Serial.print(F("\t value:\t"));
-          Serial.print(dataArr[1]);
+          Serial.println(dataArr[1]);
           
         }
         currentState = TX_NODE;
