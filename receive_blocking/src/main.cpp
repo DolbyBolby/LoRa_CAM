@@ -71,18 +71,18 @@ void loop() {
           Serial.println(buffer);
 
           // print RSSI (Received Signal Strength Indicator)
-          Serial.print(F("[SX1280] RSSI:\t\t"));
+          Serial.print(F("RSSI:\t\t"));
           Serial.print(radio.getRSSI());
           Serial.println(F(" dBm"));
 
           // print SNR (Signal-to-Noise Ratio)
-          Serial.print(F("[SX1280] SNR:\t\t"));
+          Serial.print(F("SNR:\t\t"));
           Serial.print(radio.getSNR());
           Serial.println(F(" dB"));
 
           // print the Frequency Error
           // of the last received packet
-          Serial.print(F("[SX1280] Frequency Error:\t"));
+          Serial.print(F("Frequency Error:\t"));
           Serial.print(radio.getFrequencyError());
           Serial.println(F(" Hz"));
         }
