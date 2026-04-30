@@ -1,5 +1,5 @@
 import typer
-from serial_comm import sendData,getData
+from serial_comm import sendData,getData,encode_command
 
 app = typer.Typer()
 
@@ -10,9 +10,10 @@ def get(message: str, port: str = "COM5", baudrate: int = 9600) -> None:
     getData(message, port, baudrate)
 
 @app.command()
-def send(message: str, port: str = "COM5", baudrate: int = 9600) -> None:
+def send(command: str, value: float, port: str = "COM5", baudrate: int = 9600) -> None:
     """Send a message via serial port."""
-    sendData(message, port, baudrate)
+    opCode = encode_command(command,value)
+    sendData(opCode, port, baudrate)
 
 if __name__ == "__main__":
     app()
