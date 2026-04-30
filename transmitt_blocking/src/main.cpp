@@ -16,12 +16,15 @@ enum State {
 };
 
 State currentState = WAIT_SERIAL;
-String serialBuffer = "";
+//String serialBuffer = "";
 
 //bool transmitFlag = false;
 volatile bool operationDone = false;
 unsigned long startTime = millis();
 unsigned long timeout = 200;
+
+byte dataArr[2];
+
 
 #if defined(ESP8266) || defined(ESP32)
   ICACHE_RAM_ATTR
@@ -64,7 +67,7 @@ void loop() {
 
     case TX_NODE: {
       if(Serial.available()) logRejectedCommand();
-      int radio_state = radio.startTransmit(serialBuffer);
+      int radio_state = radio.startTransmit(dataArr,2);
       if (radio_state != RADIOLIB_ERR_NONE) {
         Serial.print(F("failed transmit, "));
         Serial.println(radio_state);
@@ -94,11 +97,14 @@ void loop() {
       if(Serial.available()) logRejectedCommand();
       while(millis() - startTime < timeout){
         if(operationDone) {
-          serialBuffer = "";
-          int radio_state = radio.readData(serialBuffer);
+          memset(dataArr, 0, sizeof(dataArr));
+          int numBytes = radio.getPacketLength();
+          int radio_state = radio.readData(dataArr,numBytes);
           if (radio_state == RADIOLIB_ERR_NONE) {
-            Serial.print(F("Data:\t\t"));
-            Serial.println(serialBuffer);
+            Serial.println(F("Cmd:\t"));
+            Serial.print(dataArr[0]);
+            Serial.print(F("\t value:\t"));
+            Serial.print(dataArr[1]);
           }
           currentState = WAIT_SERIAL;
           break;
@@ -117,15 +123,17 @@ void loop() {
 }  
 
 void handelSerialInput() {
-  uint8_t cmd = Serial.read();
-  uint8_t value = Serial.read();
+  byte cmd = Serial.read();
+  byte value = Serial.read();
+  dataArr[0] = cmd;
+  dataArr[1] = value;
 
   Serial.print("[Command accepted] cmd=");
-  Serial.print(cmd);
+  Serial.print(dataArr[0]);
   Serial.print(" value=");
-  Serial.println(value);
+  Serial.println(dataArr[1]);
   
-  //currentState = TX_NODE;
+  currentState = TX_NODE;
 }
 
 void logRejectedCommand() {
