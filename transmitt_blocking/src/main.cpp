@@ -37,7 +37,14 @@ void setup() {
   Serial.begin(9600);
   Serial.print(F("[SX1262] Initializing ... "));
 
-  int radio_state = radio.begin();
+  float freq = 2400;
+  float bw = 406.25;
+  float sf = 7;
+  float cr = 5;
+  
+  
+
+  int radio_state = radio.begin(freq,bw,sf,cr);
   if (radio_state == RADIOLIB_ERR_NONE) {
     Serial.println(F("success!"));
   } else {
