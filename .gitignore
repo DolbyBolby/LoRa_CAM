@@ -80,6 +80,7 @@ Thumbs.db
 *.sublime-workspace
 
 # Project specific
+*.csv
 ESP32_DevKitC_V4_test/
 *.log
 *.tmp
