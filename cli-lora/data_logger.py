@@ -398,9 +398,9 @@ class SweepLogger:
             ws.conditional_formatting.add(
                 data_range,
                 ColorScaleRule(
-                    start_type="min",  start_color="FF0000",
-                    mid_type="percentile", mid_value=50, mid_color="FFFF00",
-                    end_type="max",    end_color="00B050",
+                    start_type="min",  start_color="FFFF0000",
+                    mid_type="percentile", mid_value=50, mid_color="FFFFFF00",
+                    end_type="max",    end_color="FF00B050",
                 ),
             )
 

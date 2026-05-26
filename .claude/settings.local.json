@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(Get-ChildItem -Path \"D:\\\\PlateformIO_project_folder\" -Force)",
-      "Bash(Select-Object Name, PSIsContainer)"
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(python D:\\\\PlateformIO_project_folder\\\\inspect_slides.py)",
+      "PowerShell(python D:\\\\PlateformIO_project_folder\\\\inspect_shapes.py)",
+      "PowerShell(python D:\\\\PlateformIO_project_folder\\\\generate_slides.py 2>&1)",
+      "PowerShell(python D:\\\\PlateformIO_project_folder\\\\verify_output.py)",
+      "PowerShell(python D:\\\\PlateformIO_project_folder\\\\verify_detail.py)"
     ]
   }
 }
