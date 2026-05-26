@@ -12,19 +12,18 @@ enum State {
   TX_NODE,
   RX_NODE,
   WAIT_ACK,
+  SEND_CONFIRM,
   ERROR
 };
 
 State currentState = WAIT_SERIAL;
-//String serialBuffer = "";
 
-//bool transmitFlag = false;
 volatile bool operationDone = false;
 unsigned long startTime = millis();
 unsigned long timeout = 200;
 
 byte dataArr[2];
-
+static bool matchOk = false;
 
 #if defined(ESP8266) || defined(ESP32)
   ICACHE_RAM_ATTR
@@ -41,10 +40,8 @@ void setup() {
   float bw = 406.25;
   float sf = 7;
   float cr = 5;
-  
-  
 
-  int radio_state = radio.begin(freq,bw,sf,cr);
+  int radio_state = radio.begin();
   if (radio_state == RADIOLIB_ERR_NONE) {
     Serial.println(F("success!"));
   } else {
@@ -53,14 +50,13 @@ void setup() {
     while (true) { delay(10); }
   }
 
-  int crc_state = radio.setCRC(2);   // CRC 2 bytes
+  int crc_state = radio.setCRC(2);
   if(crc_state != RADIOLIB_ERR_NONE) {
     Serial.print("setCRC failed: ");
     Serial.println(crc_state);
   }
 
   radio.setDio1Action(setFlag);
-  //radio.startTransmit("[INIT]");
 }
 
 void loop() {
@@ -87,7 +83,7 @@ void loop() {
     case RX_NODE: {
       if(Serial.available()) logRejectedCommand();
       if(operationDone) {
-        operationDone = false; //reset flag
+        operationDone = false;
         int radio_state = radio.startReceive();
         if (radio_state != RADIOLIB_ERR_NONE) {
           Serial.print(F("failed receive,"));
@@ -104,16 +100,19 @@ void loop() {
       if(Serial.available()) logRejectedCommand();
       while(millis() - startTime < timeout){
         if(operationDone) {
-          memset(dataArr, 0, sizeof(dataArr));
+          operationDone = false;
+          byte echoArr[2] = {0, 0};
           int numBytes = radio.getPacketLength();
-          int radio_state = radio.readData(dataArr,numBytes);
-          if (radio_state == RADIOLIB_ERR_NONE) {
-            Serial.print(F("Cmd:\t"));
-            Serial.print(dataArr[0]);
-            Serial.print(F("\t value:\t"));
-            Serial.println(dataArr[1]);
+          int radio_state = radio.readData(echoArr, numBytes);
+          if (radio_state == RADIOLIB_ERR_NONE && numBytes >= 2) {
+            matchOk = (echoArr[0] == dataArr[0] && echoArr[1] == dataArr[1]);
+            byte confirm = matchOk ? 0xAA : 0xFF;
+            radio.startTransmit(&confirm, 1);
+            currentState = SEND_CONFIRM;
+          } else {
+            // Bad read — retry transmission
+            currentState = TX_NODE;
           }
-          currentState = WAIT_SERIAL;
           break;
         }
       }
@@ -123,11 +122,27 @@ void loop() {
       }
       break;
     }
+
+    case SEND_CONFIRM: {
+      if(Serial.available()) logRejectedCommand();
+      if(operationDone) {
+        operationDone = false;
+        if (matchOk) {
+          Serial.println(F("[ACK OK] Confirmation 0xAA sent"));
+          currentState = WAIT_SERIAL;
+        } else {
+          Serial.println(F("[MISMATCH] Rejection 0xFF sent, retransmitting..."));
+          currentState = TX_NODE;
+        }
+      }
+      break;
+    }
+
     case ERROR: {
       break;
     }
   }
-}  
+}
 
 void handelSerialInput() {
   byte cmd = Serial.read();
@@ -139,7 +154,7 @@ void handelSerialInput() {
   Serial.print(dataArr[0]);
   Serial.print(" value=");
   Serial.println(dataArr[1]);
-  
+
   currentState = TX_NODE;
 }
 
