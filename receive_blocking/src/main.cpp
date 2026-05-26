@@ -16,6 +16,33 @@ byte dataArr[2];
 unsigned long startTime = 0;
 const unsigned long confirmTimeout = 300;
 
+// NOTE: 0xFF is reserved as GET flag — stored values must stay in 0–254.
+struct SensorVar {
+  byte opcode;
+  byte value;
+};
+
+static SensorVar store[] = {
+  {1,   0},   // voltage     (0.0 × 10)
+  {2,   0},   // current     (0.0 × 10)
+  {3, 250},   // temperature (25.0 × 10)
+  {4,  10},   // status      (1.0 × 10)
+};
+static const int STORE_SIZE = sizeof(store) / sizeof(store[0]);
+
+byte getStoredValue(byte opcode) {
+  for (int i = 0; i < STORE_SIZE; i++) {
+    if (store[i].opcode == opcode) return store[i].value;
+  }
+  return 0;
+}
+
+void updateStoredValue(byte opcode, byte value) {
+  for (int i = 0; i < STORE_SIZE; i++) {
+    if (store[i].opcode == opcode) { store[i].value = value; return; }
+  }
+}
+
 #if defined(ESP8266) || defined(ESP32)
   ICACHE_RAM_ATTR
 #endif
@@ -55,15 +82,21 @@ void loop() {
         operationDone = false;
         int numBytes = radio.getPacketLength();
         int radio_state = radio.readData(dataArr, numBytes);
-        if (radio_state == RADIOLIB_ERR_NONE) {
-          // Do not print yet — validation depends on TX confirmation
+        if (radio_state == RADIOLIB_ERR_NONE && numBytes >= 2) {
+          if (dataArr[1] == 0xFF) {
+            // GET: substitute 0xFF placeholder with the stored value before echoing
+            dataArr[1] = getStoredValue(dataArr[0]);
+          } else {
+            // SEND: persist the received value, echo back as-is
+            updateStoredValue(dataArr[0], dataArr[1]);
+          }
           currentState = TX_NODE;
         }
       }
       break;
     }
 
-    // Echoes the received bytes back to the transmitter (non-blocking start)
+    // Echoes the (possibly modified) bytes back to the transmitter
     case TX_NODE: {
       int radio_state = radio.startTransmit(dataArr, 2);
       if (radio_state != RADIOLIB_ERR_NONE) {
