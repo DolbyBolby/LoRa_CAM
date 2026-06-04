@@ -58,6 +58,7 @@ void setup() {
   if (crc_state != RADIOLIB_ERR_NONE) {
     Serial.print("setCRC failed: ");
     Serial.println(crc_state);
+    while (true) { delay(10); }
   }
 
   radio.setDio1Action(setFlag);
